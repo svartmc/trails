@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>TRAILS</title>
+
+		<meta charset="utf-8">
+		<meta name="msapplication-tap-highlight" content="no"/>
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		
+		<style>
+
+			body {
+
+				color: #000000;
+				font-family: sans-serif;
+				font-size: 16px;
+				text-align: center;
+				background: #e9a245;
+				margin: 0px;
+				overflow: hidden;
+
+			}
+
+			#infos {
+
+				font-size: 2.0vh;
+				text-align: center;
+				color: #ffffff;
+				position: fixed;
+				bottom: 8%;
+				left: 8%;
+				opacity: 0.6;
+				-webkit-touch-callout: none; /* iOS Safari */
+    			-webkit-user-select: none; /* Safari */
+     			-khtml-user-select: none; /* Konqueror HTML */
+       			-moz-user-select: none; /* Firefox */
+        		-ms-user-select: none; /* Internet Explorer/Edge */
+            	user-select: none; /* Non-prefixed version, currently
+                                  supported by Chrome and Opera */
+			}
+
+			a:link {
+
+			  	text-decoration: none;
+			  	color: #ffffff;
+
+			}
+
+			a:visited {
+
+			  	text-decoration: none;
+			  	color: #ffffff;
+
+			}
+
+			a:hover {
+
+			  	text-decoration: underline;
+			  	color: #ffffff;
+
+			}
+
+			a:active {
+
+			  	text-decoration: underline;
+			  	color: #ffffff;
+
+			}
+
+			*:focus {
+
+    			outline: none;
+
+			}
+
+		</style>
+	</head>
+	<body>
+
+		<div id="infos"><a target="_blank" href="http://arnaudsvart.com/trails/">Infos</a>
+		</div>		
+		
+		<script type="text/javascript" src="js/three.min.js"></script>
+		<script type="text/javascript" src="js/WebGL.js"></script>
+		<script type="text/javascript" src="js/trails.js"></script>
+
+		<script>
+
+			var camera, scene, renderer, mouse;
+
+			var growingNumber = 0;
+
+			var sphere;
+			var shadow;
+			var sphereTarget;
+
+			// check if WebGL available
+
+			if ( THREE.WEBGL.isWebGLAvailable() === false ) {
+
+				document.body.appendChild( THREE.WEBGL.getWebGLErrorMessage() );
+				
+			}
+
+			init();
+			createScene();
+			animate();
+
+			function init() {
+
+				// camera
+
+				camera = new THREE.PerspectiveCamera( 28, window.innerWidth / window.innerHeight, 0.1, 30000 );
+				camera.position.set( 34, 60, 34 );
+
+				// scene and lights
+
+				scene = new THREE.Scene();
+				scene.background = new THREE.Color( 0xe9a245 );
+
+				// renderer
+
+				renderer = new THREE.WebGLRenderer( { antialias: true } );
+				renderer.setPixelRatio( window.devicePixelRatio );
+				renderer.setSize( window.innerWidth, window.innerHeight );
+				document.body.appendChild( renderer.domElement );
+				renderer.autoClear = false;
+
+				window.addEventListener( "resize", onWindowResize, false );
+				
+			}
+
+			function createSphere() {
+
+				var geometry = new THREE.SphereGeometry( 0.68, 18, 18 );
+				var material = new THREE.MeshBasicMaterial({ color: 0xf1e9df });
+				sphere = new THREE.Mesh( geometry, material );
+				scene.add( sphere );
+
+				// create trail
+				// object, length, width, resolution
+
+				createTrail( sphere, 80, 0.8, 18 );
+
+				// helpers to move the sphere
+
+				sphereTarget = new THREE.Vector3();
+				sphereRotationHelper = new THREE.Object3D();
+
+				// fake shadow
+
+				var geometry = new THREE.CircleGeometry( 0.6, 8 );
+				geometry.rotateX( -Math.PI/2 );
+				var material = new THREE.MeshBasicMaterial( { color: 0xdb963f } );
+				shadow = new THREE.Mesh( geometry, material );
+				scene.add( shadow );
+
+			}
+
+			function createDirt() {
+
+				for ( var i = 0; i < 10; i++ ) {
+
+					var geometry = new THREE.PlaneBufferGeometry( 0.28, 0.28 );
+					geometry.rotateX( -Math.PI / 2 );
+					geometry.rotateY( Math.random() * Math.PI );
+
+					if ( Math.random() < 0.5 ) {
+
+						var material = new THREE.MeshBasicMaterial( { color: 0xb17931 } );
+
+					} else {
+
+						var material = new THREE.MeshBasicMaterial( { color: 0xe7c951 } );
+
+					}
+
+					var dirt = new THREE.Mesh( geometry, material );
+
+					var randScale = THREE.Math.randFloat( 0.6, 1 );
+
+					dirt.scale.set( randScale, 1, randScale );
+
+					dirt.position.set( THREE.Math.randFloat( -34, 34 ), 0, THREE.Math.randFloat( -34, 34 ) );
+
+					scene.add( dirt );
+
+				}
+
+			}
+			
+			function createScene() {
+
+				createSphere();
+				createDirt();
+
+			}
+
+			function moveSphere() {
+
+				// place target randomly on a circle
+
+				if ( growingNumber % 20 === 0 ) {
+
+					var angle = Math.random() * Math.PI * 2;
+					var radius = 20;
+
+					sphereTarget.x = Math.cos( angle ) * radius;
+					sphereTarget.y = 1.6;
+					sphereTarget.z = Math.sin( angle ) * radius;
+
+				}
+
+				// make the sphere look at target
+
+				sphereRotationHelper.position.copy( sphere.position );
+				sphereRotationHelper.lookAt( sphereTarget );
+				sphere.quaternion.rotateTowards( sphereRotationHelper.quaternion, 0.028 );
+
+				// then move the sphere
+
+				sphere.translateZ( 0.34 );
+
+				sphere.position.y = 1.6;
+
+				shadow.position.x = sphere.position.x;
+				shadow.position.y = -0.02;
+				shadow.position.z = sphere.position.z;
+
+			}
+
+			function updateCamera() {
+
+				camera.lookAt( sphere.position );
+
+			}
+
+			function updateScene() {
+
+				moveSphere();
+				updateTrails();
+				updateCamera();
+				
+				growingNumber += 1;
+
+			}
+
+			function onWindowResize() {
+
+				camera.aspect = window.innerWidth / window.innerHeight;
+
+				camera.updateProjectionMatrix();
+
+				renderer.setSize( window.innerWidth, window.innerHeight );
+
+				render();
+
+			}
+
+			function animate() {
+				
+				updateScene();
+
+				requestAnimationFrame( animate );
+
+				render();
+
+			}
+
+			function render() {
+
+				renderer.clear();
+				renderer.render( scene, camera );
+
+			}
+
+		</script>
+	</body>
+</html>
