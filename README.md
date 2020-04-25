@@ -2,7 +2,7 @@
 
 ![trails gif](demo.gif)
 
-Simple geometrical trail on ( x, z ) axis to add to <a href="https://threejs.org/" target="_blank" rel="noopener noreferrer">Three.js</a> objects.
+Simple geometrical trail on ( x, z ) axis to attach to your <a href="https://threejs.org/" target="_blank" rel="noopener noreferrer">Three.js</a> objects.
 
 Create the trail:
 ```
